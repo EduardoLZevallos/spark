@@ -162,6 +162,32 @@ class FrameAttrsMixin:
         psdf.columns = columns
         self.assertTrue((psdf.dtypes == pdf.dtypes).all())
 
+    def test_select_dtypes_with_datetime_and_timedelta(self):
+        pdf = pd.DataFrame(
+            {
+                "a": [1, 2, 3],
+                "b": [1.0, 2.0, 3.0],
+                "c": pd.date_range("20130101", periods=3),
+                "d": pd.to_timedelta([1, 2, 3], unit="D"),
+                "e": list("xyz"),
+            },
+            index=np.random.rand(3),
+        )
+        psdf = ps.from_pandas(pdf)
+
+        self.assert_eq(psdf.select_dtypes(include="int64"), pdf.select_dtypes(include="int64"))
+        self.assert_eq(psdf.select_dtypes(exclude="int64"), pdf.select_dtypes(exclude="int64"))
+        self.assert_eq(
+            psdf.select_dtypes(include="datetime"), pdf.select_dtypes(include="datetime")
+        )
+        self.assert_eq(
+            psdf.select_dtypes(include="timedelta"), pdf.select_dtypes(include="timedelta")
+        )
+        self.assert_eq(
+            psdf.select_dtypes(exclude=["datetime", "timedelta"]),
+            pdf.select_dtypes(exclude=["datetime", "timedelta"]),
+        )
+
     def test_axes(self):
         pdf = self.pdf
         psdf = ps.from_pandas(pdf)

@@ -7615,14 +7615,23 @@ defaultdict(<class 'list'>, {'col..., 'col...})]
 
         column_labels = []
         for label in self._internal.column_labels:
+            dtype = self._psser_for(label).dtype
+            # pandas 3 creates datetime64/timedelta64 columns with units other than 'ns', such as
+            # 'datetime64[us]', and infer_dtype_from_object rejects them as too specific.
+            # Use the generic numpy type for any unit, as pandas does.
+            if isinstance(dtype, np.dtype) and dtype.kind in "mM":
+                numpy_type = dtype.type
+            else:
+                numpy_type = infer_dtype_from_object(dtype.name)
+
             if len(include_list) > 0:
                 should_include = (
-                    infer_dtype_from_object(self._psser_for(label).dtype.name) in include_numpy_type
+                    numpy_type in include_numpy_type
                     or self._internal.spark_type_for(label) in include_spark_type
                 )
             else:
                 should_include = not (
-                    infer_dtype_from_object(self._psser_for(label).dtype.name) in exclude_numpy_type
+                    numpy_type in exclude_numpy_type
                     or self._internal.spark_type_for(label) in exclude_spark_type
                 )
 
